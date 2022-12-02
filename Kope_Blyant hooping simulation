@@ -1,0 +1,120 @@
+import arcade
+
+import math
+
+BREDDE = 1920
+HOEJDE = 1000
+SPORLAENGDE_LINJE = 200
+SPORLAENGDE_CIRKEL = 200
+
+
+# Taget fra eksemplet med den rette linje som udgangspunkt i skudets x.akse
+def ret_linje(tid, stationaert_punkt, retningsvektor):
+    x_0, y_0 = stationaert_punkt
+    r_x, r_y = retningsvektor
+    x = x_0 + r_x * tid
+    y = y_0 + r_y * tid
+    return x, y
+
+# Genbrugt fra eksemplet med cirklen som skal laves om til skudets projection
+def cirkel(tid, centrum, radius, vinkelhastighed, fase=0):
+    x_c, y_c = centrum
+    # De to næste linjer er som taget fra matematikbogen
+    x = x_c + radius - 500
+    y = y_c + radius * 1.5 * math.sin(vinkelhastighed * tid + fase)
+    return x, y
+
+#grunden Kope skal stå på
+def Field(x, y):
+   # Dette er asfaldten som er det grunlæggende
+   arcade.draw_lrtb_rectangle_filled(x, x + BREDDE, y + 100, y, arcade.color.ARSENIC)
+   # Skyde linjen
+   arcade.draw_lrtb_rectangle_filled(x + 30, x + 80, y + 100, y, arcade.color.WHITE)
+
+
+#dette er person som skal tage skudet der skal ligne kobe bryant men jeg vil ikke tage hans navn så vi kalder ham Kope Blyant. Tak, Tak, Tak. Jeg ved godt det er meget originalt
+def Kope_Blyant(x, y):
+    #hans neger krop
+    arcade.draw_lrtb_rectangle_filled(x, x + 40, y + 200, y, arcade.color.BROWN)
+    #sko
+    arcade.draw_lrtb_rectangle_filled(x - 2, x + 44, y + 10, y, arcade.color.PURPLE)
+    #shorts og jersey
+    arcade.draw_lrtb_rectangle_filled(x - 2, x + 44, y + 160, y + 40, arcade.color.YELLOW)
+    #number kommer til at se klumpe dumpe ud men er der for aestetics
+    arcade.draw_lrtb_rectangle_filled(x - 2, x + 6, y + 140, y + 100, arcade.color.PURPLE)
+    arcade.draw_lrtb_rectangle_filled(x + 38, x + 44, y + 140, y + 100, arcade.color.PURPLE)
+    #ma boi faded up
+    arcade.draw_lrtb_rectangle_filled(x, x + 40, y + 200, y + 188, arcade.color.BLACK)
+    arcade.draw_lrtb_rectangle_filled(x, x + 12, y + 188, y + 170, arcade.color.BLACK)
+
+
+
+#dette er simpelt men jeg vil gerne havde hans arm til at rotere når han skyder så den er adskilt fra resten af kropen
+def Gokke_mokke_arm(x, y):
+    arcade.draw_lrtb_rectangle_filled(x, x + 20, y + 76, y, arcade.color.BROWN)
+#Basketball rimmen
+def metalsturture(x, y):
+    arcade.draw_lrtb_rectangle_filled(x + 180, x + 200, y + 480, y, arcade.color.COOL_GREY)
+    arcade.draw_lrtb_rectangle_filled(x + 40, x + 200, y + 500, y + 480, arcade.color.COOL_GREY)
+    arcade.draw_lrtb_rectangle_filled(x + 20, x + 50, y + 580, y + 350, arcade.color.WHITE)
+    arcade.draw_lrtb_rectangle_filled(x -100, x + 20, y + 420, y + 400, arcade.color.RED)
+
+
+
+# Denne funktion kaldes vha arcade.schedule i main. Bliver kaldt 60 gange i sekundet.
+def tegn(delta_tid):
+    arcade.start_render()
+    Field(0, 0)
+    Kope_Blyant(35, 100)
+    Gokke_mokke_arm(46, 180)
+    metalsturture(1580, 100)
+    # Først punkt for linjen
+    x_linje, y_linje = ret_linje(tegn.tid, (50, 100), (3, 0))
+    # Tegner punktet på linjen
+
+    # Fjerner det første punkt i sporet, hvis sporet er for langt
+    if len(tegn.spor_linje) > SPORLAENGDE_LINJE:
+        tegn.spor_linje.pop(0)
+
+    # Beregner punkt på cirklens periferi
+    # Linjens punkt sættes til at være cirklens centrum
+    x_cirkel, y_cirkel = cirkel(tegn.tid, (x_linje, y_linje), 500, 0.005, 0.1)
+    # Tegner punktet på cirklens periferi
+    arcade.draw_circle_filled(x_cirkel, y_cirkel, 15, arcade.csscolor.ORANGE)
+    # Fjerner det første punkt i sporet, hvis sporet er for langt
+    if len(tegn.spor_cirkel) > SPORLAENGDE_CIRKEL:
+        tegn.spor_cirkel.pop(1)
+    # Tegner sporet
+    for punkt in tegn.spor_cirkel:
+        arcade.draw_circle_filled(*punkt, 3.5, arcade.csscolor.WHITE_SMOKE)
+    # Opdaterer tiden, hvis punktet for linjen er inden for vinduet
+    if (x_linje >= 0 and x_linje < 1530) and (y_linje >= 0 and y_linje <= HOEJDE):
+        # Tiden opdateres med 1
+        tegn.tid += delta_tid * 60  # Der er ganget med 60 for at få animationen til gå hurtigere.
+        # Tilføjer det sidste nye punkt til sporet for linjen
+        tegn.spor_linje.append((x_linje, y_linje))
+        # Tilføjer det sidste nye punkt til sporet for cirklen
+        tegn.spor_cirkel.append((x_cirkel, y_cirkel))
+    # Stopper animationen, hvis punktet på linjen er uden for vinduet
+    else:
+        # Tiden holdes konstant, så animationen stopper
+        tegn.tid = tegn.tid
+
+
+
+
+
+def main():
+    arcade.open_window(BREDDE, HOEJDE, "En cirkel")
+    arcade.set_background_color(arcade.csscolor.LIGHT_SKY_BLUE)
+
+
+    tegn.tid = 0.0
+    tegn.spor_linje = list()
+    tegn.spor_cirkel = list()
+    arcade.schedule(tegn, 1 / 60)  # Funktionen tegn kaldes 60 gange i sekundet
+
+    arcade.run()
+
+
+main()
